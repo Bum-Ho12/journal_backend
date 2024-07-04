@@ -12,8 +12,8 @@ from sqlalchemy.orm import sessionmaker, Session
 from passlib.context import CryptContext # type: ignore
 from jose import jwt # type: ignore
 from dotenv import load_dotenv
-from pydantic import BaseModel
 from models import User, Journal
+from project_types import UserCreate, UserResponse, Token, JournalCreate, JournalResponse
 
 # Load environment variables from .env file
 load_dotenv()
@@ -59,11 +59,11 @@ def get_password_hash(password):
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     """
     Create a JWT access token.
-    
+
     Args:
     - data (dict): Data to be encoded in the token.
     - expires_delta (Optional[timedelta]): Token expiration time. Defaults to 15 minutes.
-    
+
     Returns:
     - str: Encoded JWT token.
     """
@@ -76,60 +76,15 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm="HS256")
     return encoded_jwt
 
-class UserCreate(BaseModel):
-    """
-    Pydantic model for creating a new user.
-    """
-    email: str
-    username: str
-    password: str
-
-class UserResponse(BaseModel):
-    """
-    Pydantic model for returning user information.
-    """
-    email: str
-    username: str
-
-class Token(BaseModel):
-    """
-    Pydantic model for returning the JWT token.
-    """
-    access_token: str
-    token_type: str
-
-class JournalCreate(BaseModel):
-    """
-    Pydantic model for creating a new journal entry.
-    """
-    title: str
-    content: str
-    category: str
-
-class JournalResponse(BaseModel):
-    """
-    Pydantic model for returning journal entry information.
-    """
-    title: str
-    content: str
-    category: str
-    date: datetime
-    date_of_update: datetime
-    archive: bool
-    on_delete: bool
-
-    class Config:
-        from_attributes = True
-
 @app.post("/users/", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     """
     Create a new user.
-    
+
     Args:
     - user (UserCreate): Pydantic model with user details.
     - db (Session): Database session.
-    
+
     Returns:
     - UserResponse: Created user information.
     """
@@ -147,12 +102,12 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 def login_for_access_token(email: str, password: str, db: Session = Depends(get_db)):
     """
     Authenticate user and return JWT token.
-    
+
     Args:
     - email (str): User's email.
     - password (str): User's password.
     - db (Session): Database session.
-    
+
     Returns:
     - Token: JWT token and token type.
     """
@@ -163,20 +118,23 @@ def login_for_access_token(email: str, password: str, db: Session = Depends(get_
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=30)
-    access_token = create_access_token(data={"sub": user.email}, expires_delta=access_token_expires)
+    access_token_expires = timedelta(hours=24)
+    access_token = create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
     return {"access_token": access_token, "token_type": "bearer"}
+
 
 @app.get("/journals/", response_model=List[JournalResponse])
 def read_journals(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     """
     Fetch a list of journal entries.
-    
+
     Args:
     - skip (int): Number of records to skip.
     - limit (int): Maximum number of records to return.
     - db (Session): Database session.
-    
+
     Returns:
     - List[JournalResponse]: List of journal entries.
     """
@@ -187,11 +145,11 @@ def read_journals(skip: int = 0, limit: int = 10, db: Session = Depends(get_db))
 def create_journal(journal: JournalCreate, db: Session = Depends(get_db)):
     """
     Create a new journal entry.
-    
+
     Args:
     - journal (JournalCreate): Pydantic model with journal entry details.
     - db (Session): Database session.
-    
+
     Returns:
     - dict: Success message.
     """
