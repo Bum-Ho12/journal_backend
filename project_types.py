@@ -27,6 +27,13 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class CredentialResponse(BaseModel):
+    """
+    Pydantic model for returning the JWT token.
+    """
+    token:Token
+    user: UserResponse
+
 class JournalCreate(BaseModel):
     """
     Pydantic model for creating a new journal entry.
