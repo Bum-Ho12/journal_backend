@@ -53,6 +53,7 @@ class JournalResponse(BaseModel):
     """
     Pydantic model for returning journal entry information.
     """
+    id:str
     title: str
     content: str
     category: str
