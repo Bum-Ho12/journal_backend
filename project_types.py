@@ -1,8 +1,9 @@
 """
 file: types.py
 """
+from typing import Optional
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class UserCreate(BaseModel):
@@ -12,6 +13,14 @@ class UserCreate(BaseModel):
     email: str
     username: str
     password: str
+
+class UserUpdate(BaseModel):
+    """
+    Pydantic model for updating user information.
+    """
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
 
 class UserLogin(BaseModel):
     """
