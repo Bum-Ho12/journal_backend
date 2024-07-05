@@ -166,9 +166,9 @@ def login_for_access_token(user_login: UserLogin, db: Session = Depends(get_db))
 
 
 # pylint:disable=unused-argument
-@app.put("/users/{user_id}", response_model=CredentialResponse)
+@app.put("/users/{email}", response_model=CredentialResponse)
 def update_user_profile(
-    user_id: int, user_update: UserUpdate, db: Session = Depends(get_db),
+    email: str, user_update: UserUpdate, db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)):
     """
     Update user profile details.
@@ -182,7 +182,7 @@ def update_user_profile(
     Returns:
     - CredentialResponse: Updated user information with token.
     """
-    user = db.query(User).filter(User.id == user_id).first()
+    user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     # Update user details
