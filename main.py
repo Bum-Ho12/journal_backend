@@ -13,7 +13,7 @@ from passlib.context import CryptContext # type: ignore
 from jose import jwt, JWTError # type: ignore
 from dotenv import load_dotenv
 from models import User, Journal
-from project_types import UserCreate, JournalCreate, JournalResponse,CredentialResponse
+from project_types import UserCreate, JournalCreate, JournalResponse,CredentialResponse,UserLogin
 
 # Load environment variables from .env file
 load_dotenv()
@@ -137,7 +137,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     }}
 
 @app.post("/token", response_model=CredentialResponse)
-def login_for_access_token(email: str, password: str, db: Session = Depends(get_db)):
+def login_for_access_token(user_login: UserLogin, db: Session = Depends(get_db)):
     """
     Authenticate user and return JWT token.
 
@@ -149,8 +149,8 @@ def login_for_access_token(email: str, password: str, db: Session = Depends(get_
     Returns:
     - Token: JWT token and token type.
     """
-    user = db.query(User).filter(User.email == email).first()
-    if not user or not verify_password(password, user.hashed_password):
+    user = db.query(User).filter(User.email == user_login.email).first()
+    if not user or not verify_password(user_login.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",

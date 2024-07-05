@@ -13,6 +13,13 @@ class UserCreate(BaseModel):
     username: str
     password: str
 
+class UserLogin(BaseModel):
+    """
+    Pydantic model for receiving user login credentials.
+    """
+    email: str
+    password: str
+
 class UserResponse(BaseModel):
     """
     Pydantic model for returning user information.
