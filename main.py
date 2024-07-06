@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone, date
 from typing import Optional, List
 import fastapi
 from fastapi import FastAPI, Depends, HTTPException, status
-from sqlalchemy import desc
+# from sqlalchemy import desc
 from sqlalchemy import create_engine, extract
 from sqlalchemy.orm import sessionmaker, Session
 # pylint: disable=import-error
@@ -209,8 +209,7 @@ def read_journals(skip: int = 0, limit: int = 10, db: Session = Depends(get_db),
     Returns:
     - List[JournalResponse]: List of journal entries.
     """
-    journals = db.query(Journal).order_by(
-        desc(Journal.date_created)).offset(skip).limit(limit).all()
+    journals = db.query(Journal).offset(skip).limit(limit).all()
     return journals
 
 # pylint: disable=unused-argument
@@ -307,7 +306,7 @@ def read_journals_daily(db: Session = Depends(get_db),
     - List[JournalResponse]: List of journal entries created today.
     """
     today = date.today()
-    daily_journals = db.query(Journal).order_by(desc(Journal.date_created)).filter(
+    daily_journals = db.query(Journal).filter(
         extract('day', Journal.date_created) == today.day,
         extract('month', Journal.date_created) == today.month,
         extract('year', Journal.date_created) == today.year).all()
@@ -348,7 +347,7 @@ def read_journals_monthly(db: Session = Depends(get_db),
     - List[JournalResponse]: List of journal entries created this month.
     """
     today = date.today()
-    monthly_journals = db.query(Journal).order_by(desc(Journal.date_created)).filter(
+    monthly_journals = db.query(Journal).filter(
         extract('month', Journal.date_created) == today.month,
         extract('year', Journal.date_created) == today.year).all()
     return monthly_journals

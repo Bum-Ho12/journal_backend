@@ -41,7 +41,7 @@ class Journal(Base):
     date_created = Column(DateTime, default=datetime.now(timezone.utc))
     due_date = Column(DateTime)
     date_of_update = Column(DateTime, default=datetime.now(timezone.utc),
-                        onupdate=datetime.now(timezone.utc))
+        onupdate=datetime.now(timezone.utc))
     archive = Column(Boolean, default=False)
     on_delete = Column(Boolean, default=False)
 
