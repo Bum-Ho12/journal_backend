@@ -68,7 +68,7 @@ class JournalResponse(BaseModel):
     content: str
     category: str
     date_created: datetime
-    due_date:datetime
+    due_date:Optional[datetime] = None
     date_of_update: datetime
     archive: bool
     on_delete: bool
