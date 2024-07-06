@@ -209,7 +209,8 @@ def read_journals(skip: int = 0, limit: int = 10, db: Session = Depends(get_db),
     Returns:
     - List[JournalResponse]: List of journal entries.
     """
-    journals = db.query(Journal).order_by(desc(Journal.date)).offset(skip).limit(limit).all()
+    journals = db.query(Journal).order_by(
+        desc(Journal.date_created)).offset(skip).limit(limit).all()
     return journals
 
 # pylint: disable=unused-argument
@@ -306,10 +307,10 @@ def read_journals_daily(db: Session = Depends(get_db),
     - List[JournalResponse]: List of journal entries created today.
     """
     today = date.today()
-    daily_journals = db.query(Journal).order_by(desc(Journal.date)).filter(
-        extract('day', Journal.date) == today.day,
-        extract('month', Journal.date) == today.month,
-        extract('year', Journal.date) == today.year).all()
+    daily_journals = db.query(Journal).order_by(desc(Journal.date_created)).filter(
+        extract('day', Journal.date_created) == today.day,
+        extract('month', Journal.date_created) == today.month,
+        extract('year', Journal.date_created) == today.year).all()
     return daily_journals
 
 # pylint: disable=unused-argument
@@ -328,8 +329,8 @@ def read_journals_weekly(db: Session = Depends(get_db),
     """
     start_of_week = datetime.now() - timedelta(days=datetime.now().weekday())
     end_of_week = start_of_week + timedelta(days=7)
-    weekly_journals = db.query(Journal).filter(Journal.date >= start_of_week,
-        Journal.date < end_of_week).all()
+    weekly_journals = db.query(Journal).filter(Journal.date_created >= start_of_week,
+        Journal.date_created < end_of_week).all()
     return weekly_journals
 
 # pylint: disable=unused-argument
@@ -347,9 +348,9 @@ def read_journals_monthly(db: Session = Depends(get_db),
     - List[JournalResponse]: List of journal entries created this month.
     """
     today = date.today()
-    monthly_journals = db.query(Journal).order_by(desc(Journal.date)).filter(
-        extract('month', Journal.date) == today.month,
-        extract('year', Journal.date) == today.year).all()
+    monthly_journals = db.query(Journal).order_by(desc(Journal.date_created)).filter(
+        extract('month', Journal.date_created) == today.month,
+        extract('year', Journal.date_created) == today.year).all()
     return monthly_journals
 
 @app.get("/", include_in_schema=False)
