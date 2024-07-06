@@ -57,6 +57,7 @@ class JournalCreate(BaseModel):
     title: str
     content: str
     category: str
+    due_date: str
 
 class JournalResponse(BaseModel):
     """
@@ -66,7 +67,8 @@ class JournalResponse(BaseModel):
     title: str
     content: str
     category: str
-    date: datetime
+    date_created: datetime
+    due_date:datetime
     date_of_update: datetime
     archive: bool
     on_delete: bool
