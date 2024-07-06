@@ -57,7 +57,7 @@ class JournalCreate(BaseModel):
     title: str
     content: str
     category: str
-    due_date: str
+    due_date: Optional[datetime] = None
 
 class JournalResponse(BaseModel):
     """

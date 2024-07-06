@@ -39,7 +39,7 @@ class Journal(Base):
     content = Column(String)
     category = Column(String)
     date_created = Column(DateTime, default=datetime.now(timezone.utc))
-    due_date = Column(DateTime)
+    due_date = Column(DateTime, nullable=True)
     date_of_update = Column(DateTime, default=datetime.now(timezone.utc),
         onupdate=datetime.now(timezone.utc))
     archive = Column(Boolean, default=False)
