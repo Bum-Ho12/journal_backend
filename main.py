@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from passlib.context import CryptContext # type: ignore
 from jose import jwt, JWTError # type: ignore
 from dotenv import load_dotenv
-from models import User, Journal
+from models import User, Journal, categories
 from project_types import (UserCreate, JournalCreate, JournalResponse,
     CredentialResponse, UserLogin, UserUpdate)
 
@@ -352,6 +352,16 @@ def read_journals_monthly(db: Session = Depends(get_db),
         extract('month', Journal.date_created) == today.month,
         extract('year', Journal.date_created) == today.year).all()
     return monthly_journals
+
+@app.get("/categories", response_model=List[dict])
+def get_categories():
+    """
+    Fetch the list of categories.
+
+    Returns:
+    - List[dict]: List of categories.
+    """
+    return categories
 
 @app.get("/", include_in_schema=False)
 def redirect_to_docs():
