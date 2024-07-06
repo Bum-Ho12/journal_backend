@@ -6,14 +6,16 @@ from datetime import datetime, timedelta, timezone, date
 from typing import Optional, List
 import fastapi
 from fastapi import FastAPI, Depends, HTTPException, status
+from sqlalchemy import desc
 from sqlalchemy import create_engine, extract
-# pylint:disable=import-error
 from sqlalchemy.orm import sessionmaker, Session
+# pylint: disable=import-error
 from passlib.context import CryptContext # type: ignore
 from jose import jwt, JWTError # type: ignore
 from dotenv import load_dotenv
 from models import User, Journal
-from project_types import UserCreate, JournalCreate, JournalResponse,CredentialResponse,UserLogin,UserUpdate
+from project_types import (UserCreate, JournalCreate, JournalResponse,
+    CredentialResponse, UserLogin, UserUpdate)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -26,10 +28,11 @@ if not DATABASE_URL or not SECRET_KEY:
     raise ValueError("DATABASE_URL and SECRET_KEY must be set in the environment variables")
 
 # Create database engine and session local
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 app = FastAPI()
+
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -99,10 +102,8 @@ def get_current_user(
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-    # pylint:disable=unused-variable
     except JWTError as exc:
-        # pylint:disable=raise-missing-from
-        raise credentials_exception
+        raise credentials_exception from exc
     user = db.query(User).filter(User.email == email).first()
     if user is None:
         raise credentials_exception
@@ -132,9 +133,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-    return {'user':new_user,'token':{
-        'access_token':access_token,'token_type':'bearer'
-    }}
+    return {'user': new_user, 'token': {'access_token': access_token, 'token_type': 'bearer'}}
 
 @app.post("/token", response_model=CredentialResponse)
 def login_for_access_token(user_login: UserLogin, db: Session = Depends(get_db)):
@@ -160,12 +159,9 @@ def login_for_access_token(user_login: UserLogin, db: Session = Depends(get_db))
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    return {'user':user,'token':{
-        'access_token':access_token,'token_type':'bearer'
-    }}
+    return {'user': user, 'token': {'access_token': access_token, 'token_type': 'bearer'}}
 
-
-# pylint:disable=unused-argument
+# pylint: disable=unused-argument
 @app.put("/users/{email}", response_model=CredentialResponse)
 def update_user_profile(
     email: str, user_update: UserUpdate, db: Session = Depends(get_db),
@@ -197,7 +193,7 @@ def update_user_profile(
     access_token = create_access_token(data={"sub": user.email}, expires_delta=access_token_expires)
     return {'user': user, 'token': {'access_token': access_token, 'token_type': 'bearer'}}
 
-# pylint:disable=unused-argument
+# pylint: disable=unused-argument
 @app.get("/journals/", response_model=List[JournalResponse])
 def read_journals(skip: int = 0, limit: int = 10, db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)):
@@ -213,10 +209,10 @@ def read_journals(skip: int = 0, limit: int = 10, db: Session = Depends(get_db),
     Returns:
     - List[JournalResponse]: List of journal entries.
     """
-    journals = db.query(Journal).offset(skip).limit(limit).all()
+    journals = db.query(Journal).order_by(desc(Journal.date)).offset(skip).limit(limit).all()
     return journals
 
-# pylint:disable=unused-argument
+# pylint: disable=unused-argument
 @app.post("/journals/", response_model=dict)
 def create_journal(journal: JournalCreate, db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)):
@@ -237,7 +233,7 @@ def create_journal(journal: JournalCreate, db: Session = Depends(get_db),
     db.refresh(new_journal)
     return {"message": "Journal entry created successfully"}
 
-# pylint:disable=unused-argument
+# pylint: disable=unused-argument
 @app.put("/journals/{journal_id}", response_model=dict)
 def update_journal(
     journal_id: int, title: Optional[str] = None, content: Optional[str] = None,
@@ -261,6 +257,7 @@ def update_journal(
     journal = db.query(Journal).filter(Journal.id == journal_id).first()
     if not journal:
         raise HTTPException(status_code=404, detail="Journal not found")
+    # Update fields if provided
     if title:
         journal.title = title
     if content:
@@ -269,17 +266,15 @@ def update_journal(
         journal.category = category
     if archive is not None:
         journal.archive = archive
-    journal.date_of_update = datetime.now(timezone.utc)
     db.commit()
-    db.refresh(journal)
     return {"message": "Journal entry updated successfully"}
 
-# pylint:disable=unused-argument
+# pylint: disable=unused-argument
 @app.delete("/journals/{journal_id}", response_model=dict)
 def delete_journal(journal_id: int, db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)):
     """
-    Mark a journal entry for deletion.
+    Delete a journal entry.
 
     Args:
     - journal_id (int): ID of the journal entry to delete.
@@ -292,13 +287,13 @@ def delete_journal(journal_id: int, db: Session = Depends(get_db),
     journal = db.query(Journal).filter(Journal.id == journal_id).first()
     if not journal:
         raise HTTPException(status_code=404, detail="Journal not found")
-    journal.on_delete = True
+    db.delete(journal)
     db.commit()
-    return {"message": "Journal entry marked for deletion"}
+    return {"message": "Journal entry deleted successfully"}
 
-# pylint:disable=unused-argument
+# pylint: disable=unused-argument
 @app.get("/journals/daily", response_model=List[JournalResponse])
-def get_daily_journals(db: Session = Depends(get_db),
+def read_journals_daily(db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)):
     """
     Fetch journal entries created today.
@@ -308,15 +303,18 @@ def get_daily_journals(db: Session = Depends(get_db),
     - current_user (User): Authenticated user.
 
     Returns:
-    - List[JournalResponse]: List of today's journal entries.
+    - List[JournalResponse]: List of journal entries created today.
     """
     today = date.today()
-    journals = db.query(Journal).filter(Journal.date >= today).all()
-    return journals
+    daily_journals = db.query(Journal).order_by(desc(Journal.date)).filter(
+        extract('day', Journal.date) == today.day,
+        extract('month', Journal.date) == today.month,
+        extract('year', Journal.date) == today.year).all()
+    return daily_journals
 
-# pylint:disable=unused-argument
+# pylint: disable=unused-argument
 @app.get("/journals/weekly", response_model=List[JournalResponse])
-def get_weekly_journals(db: Session = Depends(get_db),
+def read_journals_weekly(db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)):
     """
     Fetch journal entries created this week.
@@ -326,16 +324,17 @@ def get_weekly_journals(db: Session = Depends(get_db),
     - current_user (User): Authenticated user.
 
     Returns:
-    - List[JournalResponse]: List of this week's journal entries.
+    - List[JournalResponse]: List of journal entries created this week.
     """
-    today = date.today()
-    week_start = today - timedelta(days=today.weekday())
-    journals = db.query(Journal).filter(Journal.date >= week_start).all()
-    return journals
+    start_of_week = datetime.now() - timedelta(days=datetime.now().weekday())
+    end_of_week = start_of_week + timedelta(days=7)
+    weekly_journals = db.query(Journal).filter(Journal.date >= start_of_week,
+        Journal.date < end_of_week).all()
+    return weekly_journals
 
-# pylint:disable=unused-argument
+# pylint: disable=unused-argument
 @app.get("/journals/monthly", response_model=List[JournalResponse])
-def get_monthly_journals(db: Session = Depends(get_db),
+def read_journals_monthly(db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)):
     """
     Fetch journal entries created this month.
@@ -345,13 +344,13 @@ def get_monthly_journals(db: Session = Depends(get_db),
     - current_user (User): Authenticated user.
 
     Returns:
-    - List[JournalResponse]: List of this month's journal entries.
+    - List[JournalResponse]: List of journal entries created this month.
     """
     today = date.today()
-    journals = db.query(Journal).filter(
-        extract('year', Journal.date) == today.year,
-        extract('month', Journal.date) == today.month).all()
-    return journals
+    monthly_journals = db.query(Journal).order_by(desc(Journal.date)).filter(
+        extract('month', Journal.date) == today.month,
+        extract('year', Journal.date) == today.year).all()
+    return monthly_journals
 
 @app.get("/", include_in_schema=False)
 def redirect_to_docs():

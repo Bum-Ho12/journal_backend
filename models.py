@@ -3,7 +3,7 @@ file: models.py
 """
 
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -15,7 +15,7 @@ load_dotenv()
 # Retrieve environment variables
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -38,8 +38,8 @@ class Journal(Base):
     title = Column(String, index=True)
     content = Column(String)
     category = Column(String)
-    date = Column(DateTime, default=datetime.utcnow)
-    date_of_update = Column(DateTime, default=datetime.utcnow)
+    date = Column(DateTime, default=datetime.now(timezone.utc))
+    date_of_update = Column(DateTime, default=datetime.now(timezone.utc))
     archive = Column(Boolean, default=False)
     on_delete = Column(Boolean, default=False)
 
