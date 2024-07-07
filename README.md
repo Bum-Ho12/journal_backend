@@ -7,6 +7,7 @@ This is a FastAPI-based backend for managing user accounts and journal entries. 
 - [Installation](#installation)
 - [Environment Variables](#environment-variables)
 - [Running the Application](#running-the-application)
+- [Running tests](#running-the-application-tests)
 - [API Endpoints](#api-endpoints)
   - [User Management](#user-management)
   - [Authentication](#authentication)
@@ -54,6 +55,12 @@ SECRET_KEY=your_secret_key  # Change this to a random secret key
    ```
 
 The API will be available at `http://127.0.0.1:8000`.
+
+## Running tests
+1. type on commandline:
+   ```bash
+   pytest test_types.py
+   ```
 
 ## API Endpoints
 
