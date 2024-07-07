@@ -10,7 +10,7 @@ class UserCreate(BaseModel):
     """
     Pydantic model for creating a new user.
     """
-    email: str
+    email: EmailStr
     username: str
     password: str
 
@@ -26,7 +26,7 @@ class UserLogin(BaseModel):
     """
     Pydantic model for receiving user login credentials.
     """
-    email: str
+    email: EmailStr
     password: str
 
 class UserResponse(BaseModel):
