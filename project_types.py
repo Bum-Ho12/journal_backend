@@ -59,6 +59,16 @@ class JournalCreate(BaseModel):
     category: str
     due_date: Optional[datetime] = None
 
+class JournalUpdate(BaseModel):
+    """
+    Pydantic model for updating an existing journal entry.
+    """
+    title: Optional[str] = None
+    content: Optional[str] = None
+    category: Optional[str] = None
+    due_date: Optional[datetime] = None
+    archive: Optional[bool] = None
+
 class JournalResponse(BaseModel):
     """
     Pydantic model for returning journal entry information.
