@@ -2,6 +2,7 @@
 file: main.py
 """
 import os
+import logging
 from datetime import datetime, timedelta, timezone, date
 from typing import Optional, List
 import fastapi
@@ -16,6 +17,8 @@ from dotenv import load_dotenv
 from models import User, Journal, categories
 from project_types import (UserCreate, JournalCreate, JournalResponse,
     CredentialResponse, UserLogin, UserUpdate)
+
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -236,9 +239,15 @@ def create_journal(journal: JournalCreate, db: Session = Depends(get_db),
 # pylint: disable=unused-argument
 @app.put("/journals/{journal_id}", response_model=dict)
 def update_journal(
-    journal_id: int, title: Optional[str] = None, content: Optional[str] = None,
-    category: Optional[str] = None, archive: Optional[bool] = None,
-    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    journal_id: int,
+    title: Optional[str] = None,
+    content: Optional[str] = None,
+    category: Optional[str] = None,
+    archive: Optional[bool] = None,
+    due_date: Optional[datetime] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """
     Update an existing journal entry.
 
@@ -248,26 +257,45 @@ def update_journal(
     - content (Optional[str]): New content of the journal entry.
     - category (Optional[str]): New category of the journal entry.
     - archive (Optional[bool]): Archive status of the journal entry.
+    - due_date (Optional[datetime]): New due date of the journal entry.
     - db (Session): Database session.
     - current_user (User): Authenticated user.
 
     Returns:
     - dict: Success message.
     """
+    logger.info("Updating journal with id: %s", journal_id)
+
     journal = db.query(Journal).filter(Journal.id == journal_id).first()
     if not journal:
+        logger.error("Journal with id: %s not found", journal_id)
         raise HTTPException(status_code=404, detail="Journal not found")
+
     # Update fields if provided
+    updated = False
     if title:
         journal.title = title
+        updated = True
     if content:
         journal.content = content
+        updated = True
     if category:
         journal.category = category
+        updated = True
     if archive is not None:
         journal.archive = archive
-    db.commit()
-    return {"message": "Journal entry updated successfully"}
+        updated = True
+    if due_date is not None:
+        journal.due_date = due_date
+        updated = True
+
+    if updated:
+        db.commit()
+        logger.info("Journal with id: %s updated successfully",{journal_id})
+        return {"message": "Journal entry updated successfully"}
+    else:
+        logger.warning("No fields provided to update for journal with id: %s",{journal_id})
+        raise HTTPException(status_code=400, detail="No fields provided to update")
 
 # pylint: disable=unused-argument
 @app.delete("/journals/{journal_id}", response_model=dict)
