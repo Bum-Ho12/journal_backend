@@ -67,7 +67,6 @@ class JournalUpdate(BaseModel):
     content: Optional[str] = None
     category: Optional[str] = None
     due_date: Optional[datetime] = None
-    archive: Optional[bool] = None
 
 class JournalResponse(BaseModel):
     """
