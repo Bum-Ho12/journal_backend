@@ -56,7 +56,7 @@ SECRET_KEY=your_secret_key  # Change this to a random secret key
 
 The API will be available at `http://127.0.0.1:8000`.
 
-## Running tests
+## Running the application tests
 1. type on commandline:
    ```bash
    pytest test_types.py
