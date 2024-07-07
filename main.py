@@ -243,7 +243,7 @@ def update_journal(
     title: Optional[str] = None,
     content: Optional[str] = None,
     category: Optional[str] = None,
-    due_date: Optional[datetime] = None,
+    # due_date: Optional[datetime] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -281,9 +281,9 @@ def update_journal(
     if category:
         journal.category = category
         updated = True
-    if due_date is not None:
-        journal.due_date = due_date
-        updated = True
+    # if due_date is not None:
+    #     journal.due_date = due_date
+    #     updated = True
 
     if updated:
         db.commit()
